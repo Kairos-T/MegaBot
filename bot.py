@@ -2,6 +2,7 @@ import os
 import random
 import discord
 from discord.ext import commands
+#from discord.ext import app_commands
 
 from decouple import Config
 
@@ -10,6 +11,7 @@ api_token = config.get('DISCORD_TOKEN')
 
 intents = discord.Intents.all()
 intents.members = True
+#intents.members_content = True
 BOT_CHANNEL = 1097083507710369862
 
 client = commands.Bot(command_prefix='!', intents=intents)
@@ -37,8 +39,13 @@ def get_image(image_type):
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
 
-# EVENTS
+    try:
+        synced = await client.tree.sync()
+        print(f"Synced {len(synced)} Command(s)")
+    except Exception as e:
+        print(e)
 
+# EVENTS
 @client.event
 async def on_member_join(member):
     channel = client.get_channel(BOT_CHANNEL)
@@ -54,49 +61,53 @@ async def on_member_join(member):
 
 @client.event
 async def on_member_remove(member):
-    author = member.name
-    content = f'{author} has left the server.'
-    await client.get_channel(BOT_CHANNEL).send(content)
+    channel = client.get.channel(BOT_CHANNEL)
+    await channel.send(f'{member.name} has left the server.')
 
 @client.event
 async def on_message(message):
-    author = message.author.name
+    author = message.author
     content = message.content
-    await client.get_channel(BOT_CHANNEL).send(f'{author}: {content}')
+    await client.process_commands(message)
+    print(f'{author}: {content}')
+    #await client.get_channel(BOT_CHANNEL).send(f'{author}: {content}')
 
 @client.event
 async def on_message_delete(message):
     author = message.author
     content = message.content
-    channel = message.channel.content
-    await client.get_channel(BOT_CHANNEL).send(f'{author} deleted "{content}" from {channel}')
+    channel = message.channel
+    await client.channel.send(f'{author} deleted "{content}" from {channel}')
 
 @client.event
-async def on_message_edit(message):
-    author = message.author
+async def on_message_edit(before, after):
+    author = before.author
+    channel = before.channel
     before_content = before_content
     after_content = after_content
-    channel = message.channel.content
-    await client.get_channel(BOT_CHANNEL).send(f'{author} edited "{before_content}" to "{after_content}" in {channel}')
+    await channel.send(f"Before: {before_content}\nAfter: {after_content}")
+    #await client.get_channel(BOT_CHANNEL).send(f'{author} edited "{before_content}" to "{after_content}" in {channel}')
 
 @client.event
 async def on_message_edit(before, after):
     if before.author == client.user:
-        return
+        return;
 
 @client.event
 async def on_reaction_add(reaction, user):
     channel = reaction.message.channel
+    name = user.name
     emoji = reaction.emoji
     content = reaction.message.content
-    await channel.send(f'{user} reacted with {emoji} to "{content}"')
+    await channel.send(f'{name} reacted with {emoji} to "{content}"')
 
 @client.event
 async def on_reaction_remove(reaction, user):
     channel = reaction.message.channel
+    name = user.name
     emoji = reaction.emoji
     content = reaction.message.content
-    await channel.send(f'{user} removed their {emoji} reaction from "{content}"')
+    await channel.send(f'{name} removed their {emoji} reaction from "{content}"')
 
 
 # COMMANDS
