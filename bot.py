@@ -96,7 +96,28 @@ async def delete(ctx, user:discord.User):
         if message.author == user and message.id != ctx.message.id:
             await message.delete()  
             break
-        
+
+@bot.command()
+async def about(ctx):
+    embed = discord.Embed(title="MegaBot", description="Hi! I'm a bot created by Kairos to make your Discord server more fun and interactive.", color=0xeee657)
+    embed.add_field(name="Commands", value="Type `!help` to see a list of all the available commands.")
+    embed.add_field(name="Source Code", value="You can find my source code on [GitHub](https://github.com/Kairos-T/MegaBot).")
+    embed.set_footer(text="Thanks for using MegaBot!")
+    await ctx.send(embed=embed)
+
+@bot.command()
+async def coinflip(ctx):
+    result = random.choice(["heads", "tails"])
+    await ctx.send(f"The coin landed on **{result}**!")
+
+@bot.command()
+async def roll(ctx, sides: int = 6):
+    if sides < 2:
+        await ctx.send("The dice must have at least 2 sides.")
+        return
+    result = random.randint(1, sides)
+    await ctx.send(f"The dice rolled **{result}**!")
+
 # ============================= END COMMANDS (GENERAL) =============================
 
         
@@ -119,7 +140,7 @@ async def sleep(ctx):
     sleep_file = random.choice(sleep_files)
     with open(os.path.join(sleep_folder, sleep_file), "rb") as f:
         sleep_image = discord.File(f)
-        await ctx.send("Here's an image of Mega sleeping!", file=sleep_image)
+        await ctx.send("Here's sleepy Mega!", file=sleep_image)
 
 @bot.command()
 async def goofy(ctx):
