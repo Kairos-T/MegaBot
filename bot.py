@@ -1,136 +1,148 @@
+import discord 
 import os
 import random
-import discord
 from discord.ext import commands
-#from discord.ext import app_commands
-
+from discord import app_commands
 from decouple import Config
 
 config = Config('megabot.env')
-api_token = config.get('DISCORD_TOKEN')
+BOT_TOKEN  = config.get('DISCORD_TOKEN')
+
+BOT_CHANNEL = config.get('DISCORD_CHANNEL')
 
 intents = discord.Intents.default()
 intents.members = True
-#intents.members_content = True
-BOT_CHANNEL = 1097083507710369862
+intents.message_content = True
+bot = commands.Bot(command_prefix = commands.when_mentioned_or("!"), intents=intents)
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+mygroup = app_commands.Group(name="greetings", description="Welcomes users")
 
-def get_image(image_type):
-    if image_type == 'cute':
-        image_dir = os.path.join('megabot', 'cute')
-        image_files = os.listdir(image_dir)
-        image_file = random.choice(image_files)
-        return os.path.join(image_dir, image_file)
-    elif image_type == 'sleep':
-        image_dir = os.path.join('megabot', 'sleep')
-        image_files = os.listdir(image_dir)
-        image_file = random.choice(image_files)
-        return os.path.join(image_dir, image_file)
-    elif image_type == 'goofy':
-        image_dir = os.path.join('megabot', 'goofy')
-        image_files = os.listdir(image_dir)
-        image_file = random.choice(image_files)
-        return os.path.join(image_dir, image_file)
-    else:
-        return 'default_dog.jpg'
-
+# ============================= EVENTS =============================
 @bot.event
 async def on_ready():
-    print(f'{bot.user} has connected to Discord!')
+    print("Bot is ready")
+
+    bot.tree.add_command(mygroup)
 
     try:
         synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} Command(s)")
+        print(f'Synced {len(synced)} Command(s)')
     except Exception as e:
         print(e)
 
-# EVENTS
 @bot.event
 async def on_member_join(member):
     channel = bot.get_channel(BOT_CHANNEL)
-    await channel.send(f'Welcome {member.name}! Please introduce yourself!')
-    """name = member.name
-    pfp = member.display.avatar
-    embed = discord.Embed(title = "Welcome :D", description = f"Hello {name}. Please introduce yourself!", color = discord.Colour.random())
-    embed.set_thumbnail(url = pfp)
-    embed.set_author(name)
-    embed.add.field(name = "This is a field :P", value="This is a value :D", inline=False)
-    embed.set.footer(text = "This is a footer :D")
-    await channel.send(embed=embed)"""
-
+    await channel.send("Welcome to the server {}".format(member.mention))
+    
 @bot.event
 async def on_member_remove(member):
-    channel = bot.get.channel(BOT_CHANNEL)
-    await channel.send(f'{member.name} has left the server.')
-
+    channel = bot.get_channel(BOT_CHANNEL)
+    await channel.send("Goodbye, you will be deeply missed :(")
+    
 @bot.event
 async def on_message(message):
     author = message.author
     content = message.content
     await bot.process_commands(message)
-    print(f'{author}: {content}')
-    #await bot.get_channel(BOT_CHANNEL).send(f'{author}: {content}')
+    print("{}: {}".format(author,content))
 
 @bot.event
 async def on_message_delete(message):
     author = message.author
     content = message.content
     channel = message.channel
-    await bot.channel.send(f'{author} deleted "{content}" from {channel}')
+    await channel.send("{}: {}".format(author,content))
 
 @bot.event
-async def on_message_edit(before, after):
-    author = before.author
-    channel = before.channel
-    before_content = before_content
-    after_content = after_content
-    await channel.send(f"Before: {before_content}\nAfter: {after_content}")
-
-@bot.event
-async def on_message_edit(before, after):
+async def on_message_edit(before,after):
     if before.author == bot.user:
         return;
+    before_content = before.content
+    after_content = after.content
+    channel = before.channel
+    await channel.send("Before: {}".format(before_content))
+    await channel.send("After: {}".format(after_content))
 
 @bot.event
-async def on_reaction_add(reaction, user):
+async def on_reaction_add(reaction,user):
+    if user == bot.user:
+        return;
     channel = reaction.message.channel
     name = user.name
     emoji = reaction.emoji
     content = reaction.message.content
-    await channel.send(f'{name} reacted with {emoji} to "{content}"')
+    await channel.send("{} has reacted with {} to the message {}".format(name,emoji, content))
+
 
 @bot.event
-async def on_reaction_remove(reaction, user):
+async def on_reaction_remove(reaction,user):
     channel = reaction.message.channel
     name = user.name
     emoji = reaction.emoji
     content = reaction.message.content
-    await channel.send(f'{name} removed their {emoji} reaction from "{content}"')
+    await channel.send("{} has removed their reaction of {} to the message {}".format(name,emoji, content))
 
+# ============================= COMMANDS (GENERAL) =============================
 
-# COMMANDS
 @bot.command()
-async def ping(ctx):
-    mention = await ctx.send('pong')
-    await mention.add_reaction('🏓')
+async def ping(ctx):    
+    message = await ctx.send("Pong!")
+    await ctx.message.add_reaction("🏓")
+    
+@bot.command()
+async def delete(ctx, user:discord.User):
+    async for message in ctx.channel.history(limit = None):
+        if message.author == user and message.id != ctx.message.id:
+            await message.delete()  
+            break
+        
+# ============================= END COMMANDS (GENERAL) =============================
+
+        
+        
+# ============================= COMMANDS (Mega) =============================
 
 @bot.command()
 async def cute(ctx):
-    # Call the get_image() function with the 'cute' argument and send the image to the channel
-    image_path = get_image('cute')
-    await ctx.send(file=discord.File(image_path))
+    cute_folder = "cute"
+    cute_files = os.listdir(cute_folder)
+    cute_file = random.choice(cute_files)
+    with open(os.path.join(cute_folder, cute_file), "rb") as f:
+        cute_image = discord.File(f)
+        await ctx.send("Here's a cute image of Mega!", file=cute_image)
 
 @bot.command()
 async def sleep(ctx):
-    # Call the get_image() function with the 'sleep' argument and send the image to the channel
-    image_path = get_image('sleep')
-    await ctx.send(file=discord.File(image_path))
+    sleep_folder = "sleep"
+    sleep_files = os.listdir(sleep_folder)
+    sleep_file = random.choice(sleep_files)
+    with open(os.path.join(sleep_folder, sleep_file), "rb") as f:
+        sleep_image = discord.File(f)
+        await ctx.send("Here's an image of Mega sleeping!", file=sleep_image)
 
 @bot.command()
 async def goofy(ctx):
-    # Call the get_image() function with the 'goofy' argument and send the image to the channel
-    image_path = get_image('goofy')
-    await ctx.send(file=discord.File(image_path))
+    goofy_folder = "goofy"
+    goofy_files = os.listdir(goofy_folder)
+    goofy_file = random.choice(goofy_files)
+    with open(os.path.join(goofy_folder, goofy_file), "rb") as f:
+        goofy_image = discord.File(f)
+        await ctx.send("Here's a goofy image of Mega!", file=goofy_image)
 
-bot.run(api_token)
+# ============================= END COMMANDS (MEGA) =============================
+
+
+@bot.tree.command(description="Greets user")
+async def hello(interaction: discord.Interaction):
+    await interaction.response.send_message(f"Hey {interaction.user.mention}!")
+
+@mygroup.command(description="Pings user")
+async def ping(interaction: discord.Interaction):
+    await interaction.response.send_message(f"Ping {interaction.user.mention}!")
+
+@mygroup.command(description="Pongs user")
+async def pong(interaction: discord.Interaction):
+    await interaction.response.send_message(f"Pong {interaction.user.mention}!")
+
+bot.run(BOT_TOKEN)
