@@ -3,13 +3,13 @@ import os
 import random
 from discord.ext import commands
 from discord import app_commands
+from discord.ext.commands import HelpCommand
 from decouple import Config
 
 # ============================= HELP COMMAND =============================
-
 class MyHelpCommand(commands.HelpCommand):
     def __init__(self):
-        super().__init__()
+        super().__init__(command_attrs={"help": "Shows help for the bot commands"})
 
     async def send_bot_help(self, mapping):
         embed = discord.Embed(title="MegaBot Help", description="Here's a list of all the available commands:", color=0xeee657)
@@ -34,8 +34,10 @@ intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
 bot = commands.Bot(command_prefix = commands.when_mentioned_or("!"), intents=intents)
+bot.help_command = MyHelpCommand()
 
 mygroup = app_commands.Group(name="greetings", description="Welcomes users")
+blockedwords = [""]
 
 # ============================= EVENTS =============================
 @bot.event
@@ -58,7 +60,7 @@ async def on_member_join(member):
 @bot.event
 async def on_member_remove(member):
     channel = bot.get_channel(BOT_CHANNEL)
-    await channel.send("Goodbye, you will be deeply missed :(")
+    await channel.send("Goodbye {}!".format(member))
     
 @bot.event
 async def on_message(message):
@@ -66,13 +68,21 @@ async def on_message(message):
     content = message.content
     await bot.process_commands(message)
     print("{}: {}".format(author,content))
+    
+    if author != bot.user:
+        for text in blockedwords:
+            if "Megabot" not in str(author.roles) and text.lower() in str(content.lower()):
+                await message.channel.send("Please do not use that word.")
+                await message.delete()
+                break
+            
 
 @bot.event
 async def on_message_delete(message):
     author = message.author
     content = message.content
     channel = message.channel
-    await channel.send("{}: {}".format(author,content))
+    print("{}: {}".format(author,content))
 
 @bot.event
 async def on_message_edit(before,after):
@@ -110,13 +120,6 @@ async def ping(ctx):
     message = await ctx.send("Pong!")
     await ctx.message.add_reaction("🏓")
     ping.short_doc = "Plays ping pong with MegaBot"
-    
-@bot.command()
-async def delete(ctx, user:discord.User):
-    async for message in ctx.channel.history(limit = None):
-        if message.author == user and message.id != ctx.message.id:
-            await message.delete()  
-            break
 
 @bot.command()
 async def about(ctx):
@@ -161,6 +164,7 @@ async def cute(ctx):
     with open(os.path.join(cute_folder, cute_file), "rb") as f:
         cute_image = discord.File(f)
         await ctx.send("Here's a cute image of Mega!", file=cute_image)
+    cute.short_doc = "Sends a cute image of Mega"
 
 @bot.command()
 async def sleep(ctx):
@@ -170,6 +174,8 @@ async def sleep(ctx):
     with open(os.path.join(sleep_folder, sleep_file), "rb") as f:
         sleep_image = discord.File(f)
         await ctx.send("Here's sleepy Mega!", file=sleep_image)
+    sleep.short_doc = "Sends an image of sleepy Mega"
+
 
 @bot.command()
 async def goofy(ctx):
@@ -179,6 +185,7 @@ async def goofy(ctx):
     with open(os.path.join(goofy_folder, goofy_file), "rb") as f:
         goofy_image = discord.File(f)
         await ctx.send("Here's a goofy image of Mega!", file=goofy_image)
+    goofy.short_doc = "Sends a goofy image of Mega"
 
 # ============================= END COMMANDS (MEGA) =============================
 
