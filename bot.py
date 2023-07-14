@@ -1,6 +1,7 @@
 import discord 
 import os
 import random
+import requests
 from discord.ext import commands
 from discord import app_commands
 from discord.ext.commands import HelpCommand
@@ -37,7 +38,7 @@ bot = commands.Bot(command_prefix = commands.when_mentioned_or("!"), intents=int
 bot.help_command = MyHelpCommand()
 
 mygroup = app_commands.Group(name="greetings", description="Welcomes users")
-blockedwords = [""]
+blockedwords = ["kms"]
 
 # ============================= EVENTS =============================
 @bot.event
@@ -188,7 +189,33 @@ async def goofy(ctx):
     goofy.short_doc = "Sends a goofy image of Mega"
 
 # ============================= END COMMANDS (MEGA) =============================
+ 
 
+# ============================= COMMANDS (MODERATION) =============================
+@bot.command()
+@commands.has_any_role("alexander", "Megabot")
+async def ban(ctx, user:discord.Member):
+    if user in ctx.guild.members:
+        await user.ban()
+        await ctx.send(f"{user.display_name} has been banned.")
+    else:
+        await ctx.send("User not found.")
+
+@bot.command()
+@commands.has_any_role("alexander", "Megabot")
+async def unban(ctx, name:str):
+    notFound = True
+    entryName = user.display_name
+    async for entry in ctx.guild.bans(limit = None):
+        user = entry.user
+        entryName = user.display_name
+        if entryName == name:
+            await ctx.guild.unban(user)
+            await ctx.send(f"Unbanned user: {user.display_name}")
+            notFound = False
+    if notFound:
+        await ctx.send("User not found.")
+# ============================= END COMMANDS (MODERATION) =============================
 
 @bot.tree.command(description="Greets user")
 async def hello(interaction: discord.Interaction):
