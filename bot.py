@@ -5,6 +5,26 @@ from discord.ext import commands
 from discord import app_commands
 from decouple import Config
 
+# ============================= HELP COMMAND =============================
+
+class MyHelpCommand(commands.HelpCommand):
+    def __init__(self):
+        super().__init__()
+
+    async def send_bot_help(self, mapping):
+        embed = discord.Embed(title="MegaBot Help", description="Here's a list of all the available commands:", color=0xeee657)
+        for cog, commands in mapping.items():
+            if cog is None:
+                name = "General"
+            else:
+                name = cog.qualified_name
+            value = "\n".join([f"`{cmd.name}` - {cmd.short_doc}" for cmd in commands])
+            if value:
+                embed.add_field(name=name, value=value, inline=False)
+        await self.get_destination().send(embed=embed)
+
+# ============================= END HELP COMMAND =============================
+
 config = Config('megabot.env')
 BOT_TOKEN  = config.get('DISCORD_TOKEN')
 
@@ -89,6 +109,7 @@ async def on_reaction_remove(reaction,user):
 async def ping(ctx):    
     message = await ctx.send("Pong!")
     await ctx.message.add_reaction("🏓")
+    ping.short_doc = "Plays ping pong with MegaBot"
     
 @bot.command()
 async def delete(ctx, user:discord.User):
@@ -104,19 +125,27 @@ async def about(ctx):
     embed.add_field(name="Source Code", value="You can find my source code on [GitHub](https://github.com/Kairos-T/MegaBot).")
     embed.set_footer(text="Thanks for using MegaBot!")
     await ctx.send(embed=embed)
+    about.short_doc = "Shows information about MegaBot"
 
 @bot.command()
 async def coinflip(ctx):
     result = random.choice(["heads", "tails"])
     await ctx.send(f"The coin landed on **{result}**!")
+    coinflip.short_doc = "Flips a coin, landing on either heads or tails"
 
 @bot.command()
-async def roll(ctx, sides: int = 6):
+async def roll(ctx, sides: float = 6.0):
+    try:
+        sides = int(sides)
+    except ValueError:
+        await ctx.send("The number of sides must be an integer.")
+        return
     if sides < 2:
         await ctx.send("The dice must have at least 2 sides.")
         return
     result = random.randint(1, sides)
     await ctx.send(f"The dice rolled **{result}**!")
+    roll.short_doc = "Roll a dice with the specified number of sides (default is 6)"
 
 # ============================= END COMMANDS (GENERAL) =============================
 
