@@ -2,6 +2,8 @@ import discord
 import os
 import random
 import requests
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 from discord.ext import commands
 from discord import app_commands
 from discord.ext.commands import HelpCommand
@@ -28,8 +30,12 @@ class MyHelpCommand(commands.HelpCommand):
 
 config = Config('megabot.env')
 BOT_TOKEN  = config.get('DISCORD_TOKEN')
-
 BOT_CHANNEL = config.get('DISCORD_CHANNEL')
+
+
+spotify_client_id = config.get("spotify_client_id")
+spotify_client_secret = config.get("spotify_client_secret")
+spotify = spotipy.Spotify(client_credentials_manager=SpotifyClientCredentials(client_id=spotify_client_id, client_secret=spotify_client_secret))
 
 intents = discord.Intents.default()
 intents.members = True
@@ -151,6 +157,56 @@ async def roll(ctx, sides: float = 6.0):
     await ctx.send(f"The dice rolled **{result}**!")
     roll.short_doc = "Roll a dice with the specified number of sides (default is 6)"
 
+"""@bot.command()
+async def play(ctx):
+    song = get_song(song_name)
+    if song:
+        await ctx.send(song)
+    else:
+        await ctx.send("Sorry, I couldn't find details for that song.")
+
+def get_song(song_name):
+    try:
+        results = [spotipy.search(q=song_name, limit=5),
+                   spotipy.
+                   
+                   ]"""
+
+@bot.command()
+async def joke(ctx, category=None):
+    if not category:
+        category = "general"
+        
+    joke = get_joke(category)
+    if joke:
+        await ctx.send(joke)
+    else:
+        await ctx.send("Sorry, there is no joke available right now.")    
+
+def get_joke(category):
+    if category == 'general':
+        joke_url = 'https://official-joke-api.appspot.com/random_joke'
+        
+        try:
+            response = requests.get(joke_url)
+            joke_data = response.json()
+            if 'setup' in joke_data and 'punchline' in joke_data:
+                return f"{joke_data['setup']}\n{joke_data['punchline']}"
+        except requests.exception.RequestException:
+            pass
+        
+    elif category == 'dadjokes':
+        joke_url = 'https://icanhazdadjoke.com/'
+        headers = {'Accept': 'application/json'}
+        
+        try:
+            response = requests.get(joke_url, headers=headers)
+            joke_data = response.json()
+            if 'joke' in joke_data:
+                return joke_data['joke']
+        except requests.exceptions.RequestException:
+            pass
+            
 # ============================= END COMMANDS (GENERAL) =============================
 
         
