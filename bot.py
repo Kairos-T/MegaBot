@@ -129,6 +129,13 @@ async def ping(ctx):
     ping.short_doc = "Plays ping pong with MegaBot"
 
 @bot.command()
+async def gwen(ctx): # Random command dedicated to Gwen   
+    message = await ctx.send("REMOVING BUTT HAIRS Using NAIR Cream-A Visual Guide !")
+    await ctx.message.add_reaction("😒")
+    ping.short_doc = ""
+
+
+@bot.command()
 async def about(ctx):
     embed = discord.Embed(title="MegaBot", description="Hi! I'm a bot created by Kairos to make your Discord server more fun and interactive.", color=0xeee657)
     embed.add_field(name="Commands", value="Type `!help` to see a list of all the available commands.")
